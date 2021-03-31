@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.inyeccionDependencia.demo.dto.IngredienteDTO;
 import com.inyeccionDependencia.demo.dto.IngredienteResponseDTO;
+import com.inyeccionDependencia.demo.exceptionHandlers.IngredientNotFound;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.ResourceUtils;
 
@@ -15,7 +16,7 @@ import java.util.Optional;
 @Repository
 public class IngredienteRepositoryImpl implements IngredienteRepository{
     @Override
-    public IngredienteResponseDTO findCaloriesByName(String name) {
+    public IngredienteResponseDTO findCaloriesByName(String name) throws IngredientNotFound {
         List<IngredienteResponseDTO> ingredientesDTOS = null;
         ingredientesDTOS = loadDataBase();
         IngredienteResponseDTO result = null;
@@ -25,6 +26,8 @@ public class IngredienteRepositoryImpl implements IngredienteRepository{
                         .findFirst();
             if (item.isPresent())
                 result = item.get();
+            else
+                throw new IngredientNotFound(name);
         }
         return result;
     }

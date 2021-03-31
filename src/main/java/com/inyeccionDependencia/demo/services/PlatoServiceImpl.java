@@ -4,6 +4,7 @@ import com.inyeccionDependencia.demo.dto.CalculosResponseDTO;
 import com.inyeccionDependencia.demo.dto.IngredienteDTO;
 import com.inyeccionDependencia.demo.dto.IngredienteResponseDTO;
 import com.inyeccionDependencia.demo.dto.PlatoComidaDTO;
+import com.inyeccionDependencia.demo.exceptionHandlers.IngredientNotFound;
 import com.inyeccionDependencia.demo.repositories.IngredienteRepository;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +19,26 @@ public class PlatoServiceImpl implements PlatoService{
         this.ingredienteRepository = ingredienteRepository;
     }
 
-    public int calcularCalorias(PlatoComidaDTO plato) {
+    @Override
+    public List<CalculosResponseDTO> procesarComida(List<PlatoComidaDTO> platos) throws IngredientNotFound {
+        List<CalculosResponseDTO> platosProcesados = new ArrayList<>();
+        for (PlatoComidaDTO plato : platos){
+            platosProcesados.add(this.calcularTotalCalorias(plato));
+        }
+        return platosProcesados;
+    }
+
+    @Override
+    public CalculosResponseDTO calcularTotalCalorias(PlatoComidaDTO plato) throws IngredientNotFound {
+        CalculosResponseDTO calculos = new CalculosResponseDTO();
+        calculos.setCaloriasTotales(this.calcularCalorias(plato));
+        List<IngredienteResponseDTO> listaIngredientes = this.obtenerIngredientes(plato);
+        calculos.setCaloriasIngrediente(listaIngredientes);
+        calculos.setIngredienteMayor(obtenerIngredienteMayor(listaIngredientes));
+        return calculos;
+    }
+
+    public int calcularCalorias(PlatoComidaDTO plato) throws IngredientNotFound {
         int totalCalorias = 0;
         for (IngredienteDTO ingrediente : plato.getIngredientes()){
             IngredienteResponseDTO ingredienteDTO = ingredienteRepository.findCaloriesByName(ingrediente.getNombre());
@@ -27,27 +47,7 @@ public class PlatoServiceImpl implements PlatoService{
         return totalCalorias;
     }
 
-    @Override
-    public CalculosResponseDTO calcularTotalCalorias(PlatoComidaDTO plato) {
-        CalculosResponseDTO calculos = new CalculosResponseDTO();
-        calculos.setCaloriasTotales(this.calcularCalorias(plato));
-        List<IngredienteResponseDTO> listaIngredientes = this.obtenerIngredientes(plato);
-        calculos.setCaloriasIngrediente(listaIngredientes);
-        calculos.setIngredienteMayor(obtenerIngredienteMayor(listaIngredientes));
-
-        return calculos;
-    }
-
-    @Override
-    public List<CalculosResponseDTO> procesarComida(List<PlatoComidaDTO> platos) {
-        List<CalculosResponseDTO> platosProcesados = new ArrayList<>();
-        for (PlatoComidaDTO plato : platos){
-            platosProcesados.add(this.calcularTotalCalorias(plato));
-        }
-        return platosProcesados;
-    }
-
-    public List<IngredienteResponseDTO> obtenerIngredientes(PlatoComidaDTO plato){
+    public List<IngredienteResponseDTO> obtenerIngredientes(PlatoComidaDTO plato) throws IngredientNotFound {
         List<IngredienteResponseDTO> ingredientes = new ArrayList<>();
         for (IngredienteDTO ingrediente : plato.getIngredientes()){
             IngredienteResponseDTO responseDTO = ingredienteRepository.findCaloriesByName(ingrediente.getNombre());
